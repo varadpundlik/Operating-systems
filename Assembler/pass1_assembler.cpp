@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include <string_view>
 using namespace std;
 
 void displaySymTab(vector<pair<string, int>> &s)
@@ -33,26 +34,25 @@ int findElement(vector<pair<string, int>> s, string k)
 
 int main()
 {
-
-    map<string, pair<string, int>> memo;
-    memo["STOP"] = {"IS", 00};
-    memo["ADD"] = {"IS", 01};
-    memo["SUB"] = {"IS", 02};
-    memo["MULT"] = {"IS", 03};
-    memo["MOVER"] = {"IS", 04};
-    memo["MOVEM"] = {"IS", 05};
-    memo["COMP"] = {"IS", 06};
-    memo["BC"] = {"IS", 07};
-    memo["DIV"] = {"IS", 8};
-    memo["READ"] = {"IS", 9};
-    memo["PRINT"] = {"IS", 10};
-    memo["START"] = {"AD", 01};
-    memo["END"] = {"AD", 02};
-    memo["ORIGIN"] = {"AD", 03};
-    memo["EQU"] = {"AD", 04};
-    memo["LTORG"] = {"AD", 05};
-    memo["DS"] = {"DL", 01};
-    memo["DC"] = {"DL", 02};
+    map<string, pair<string, string>> memo;
+    memo["STOP"] = {"IS", "00"};
+    memo["ADD"] = {"IS", "01"};
+    memo["SUB"] = {"IS", "02"};
+    memo["MULT"] = {"IS", "03"};
+    memo["MOVER"] = {"IS", "04"};
+    memo["MOVEM"] = {"IS", "05"};
+    memo["COMP"] = {"IS", "06"};
+    memo["BC"] = {"IS", "07"};
+    memo["DIV"] = {"IS", "08"};
+    memo["READ"] = {"IS", "09"};
+    memo["PRINT"] = {"IS", "10"};
+    memo["START"] = {"AD", "01"};
+    memo["END"] = {"AD", "02"};
+    memo["ORIGIN"] = {"AD", "03"};
+    memo["EQU"] = {"AD", "04"};
+    memo["LTORG"] = {"AD", "05"};
+    memo["DS"] = {"DL", "01"};
+    memo["DC"] = {"DL", "02"};
 
     map<string, int> reg;
     reg["AREG"] = 1;
@@ -102,10 +102,11 @@ int main()
             if (decodedInstruction[i] == "START")
                 lc = stoi(decodedInstruction[i + 1]) - 1;
 
-            if (decodedInstruction[i] == "DC")
+            else if (decodedInstruction[i] == "DC")
             {
                 fout << "(DL,02) (c," << decodedInstruction[i + 1] << ") ";
-                i++; // Skip the immediate constant value
+                i++;
+                continue;
             }
             else if (decodedInstruction[i] == "EQU")
             {
@@ -114,18 +115,22 @@ int main()
                 {
                     symTab[pos].second = stoi(decodedInstruction[i + 1]);
                 }
-                i++; // Skip the EQU value
+                i++;
             }
             else if (decodedInstruction[i] == "LTORG")
             {
-                for (const auto &literal : litTab)
+                for (auto &literal : litTab)
                 {
-                    fout << "(DL,01) (c," << literal.first.substr(2) << ") ";
+                    if (literal.second == 0)
+                    {
+                        string s=literal.first.substr(2);
+                        s.pop_back();
+                        fout << "(DL,01) (c," << s << ") ";
+                        literal.second = lc++;
+                    }
                 }
-                litTab.clear(); // Clear literal table after outputting literals
             }
-            // ... (existing code)
-            if (memo.find(decodedInstruction[i]) != memo.end())
+            else if (memo.find(decodedInstruction[i]) != memo.end())
                 fout << "(" << memo[decodedInstruction[i]].first << "," << memo[decodedInstruction[i]].second << ") ";
 
             else if (reg.find(decodedInstruction[i]) != reg.end())
@@ -135,20 +140,13 @@ int main()
                 fout << "(" << concode[decodedInstruction[i]] << ") ";
 
             else if (decodedInstruction[i][0] == '=')
-                litTab.push_back({decodedInstruction[i], lc});
+                litTab.push_back({decodedInstruction[i], 0});
 
             else if (decodedInstruction[i][0] >= '0' && decodedInstruction[i][0] <= '9')
                 fout << "(c," << decodedInstruction[i] << ") ";
 
-            else if (isdigit(decodedInstruction[i][0]))
-            {
-                fout << "(c," << decodedInstruction[i] << ") ";
-            }
-
             else if (decodedInstruction[i][1] >= '0' && decodedInstruction[i][1] <= '9')
-            {
                 fout << "(c," << decodedInstruction[i] << ") ";
-            }
 
             else
             {
@@ -180,6 +178,16 @@ int main()
             }
         }
         fout << endl;
+    }
+    for (auto &literal : litTab)
+    {
+        if (literal.second == 0)
+        {
+            string s=literal.first.substr(2);
+            s.pop_back();
+            fout << "(DL,01) (c," << s << ") ";
+            literal.second = lc++;
+        }
     }
     displaySymTab(symTab);
     displayLitTab(litTab);
