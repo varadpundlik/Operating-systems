@@ -98,77 +98,81 @@ public:
         int totalTAT = 0;
         int totalWT = 0;
         int currentTime = 0;
-        int tm=2;
+        int tm = 2;
         int remainingTasks = num;
 
-        sort(taskList.begin(), taskList.end(), [](const Job &jl, const Job &jr)
-             { return jl.at < jr.at; });
-
-        auto compareSJF = [this](const int &left, const int &right)
+        int rt[num];
+        for (int i = 0; i < num; i++)
         {
-            return taskList[left].bt > taskList[right].bt;
-        };
-        priority_queue<int, vector<int>, decltype(compareSJF)> pq(compareSJF);
+            rt[i] = taskList[i].bt;
+        }
+        int complete = 0, t = 0, minm = INT_MAX;
+        int shortest = 0, finish_time;
+        bool check = false;
 
-        set<int> jobsInQueue; // Keep track of jobs in the queue
-
-        while (remainingTasks > 0 || !pq.empty())
+        while (complete != num)
         {
-            while (!pq.empty() && taskList[pq.top()].at <= currentTime)
+            for (int j = 0; j < num; j++)
             {
-                int j = pq.top();
-                pq.pop();
-
-                int taskDuration = min(taskList[j].bt, tm);
-                currentTime += taskDuration;
-                taskList[j].bt -= taskDuration;
-
-                if (taskList[j].bt == 0)
+                if ((taskList[j].at <= t) &&
+                    (rt[j] < minm) && rt[j] > 0)
                 {
-                    remainingTasks--;
-                    taskList[j].ct = currentTime;
-                    taskList[j].tat = taskList[j].ct - taskList[j].at;
-                    taskList[j].wt = taskList[j].tat - taskList[j].b1;
-                    totalTAT += taskList[j].tat;
-                    totalWT += taskList[j].wt;
-
-                    jobsInQueue.erase(j); // Remove the job from the tracking set
-                }
-                else
-                {
-                    pq.push(j);
+                    minm = rt[j];
+                    shortest = j;
+                    check = true;
                 }
             }
-
-            if (remainingTasks > 0)
+            if (check == false)
             {
-                int earliestArrival = INT_MAX;
-                int selectedTask = -1;
-
-                for (int i = 0; i < num; i++)
-                {
-                    if (taskList[i].at <= currentTime && taskList[i].bt > 0 && jobsInQueue.find(i) == jobsInQueue.end())
-                    {
-                        earliestArrival = taskList[i].at;
-                        selectedTask = i;
-                    }
-                }
-
-                if (selectedTask != -1)
-                {
-                    pq.push(selectedTask);
-                    jobsInQueue.insert(selectedTask); // Add the job to the tracking set
-                    currentTime = taskList[selectedTask].at;
-                }
-                else
-                {
-                    currentTime++;
-                }
+                t++;
+                continue;
             }
+
+            // Reduce remaining time by one
+            rt[shortest]--;
+
+            // Update minimum
+            minm = rt[shortest];
+            if (minm == 0)
+                minm = INT_MAX;
+
+            // If a process gets completely
+            // executed
+            if (rt[shortest] == 0)
+            {
+
+                // Increment complete
+                complete++;
+                check = false;
+
+                // Find finish time of current
+                // process
+                finish_time = t + 1;
+
+                // Calculate waiting time
+                taskList[shortest].wt = finish_time -
+                               taskList[shortest].bt -
+                               taskList[shortest].at;
+
+                if (taskList[shortest].wt < 0)
+                    taskList[shortest].wt = 0;
+            }
+            // Increment time
+            t++;
+        }
+
+        for (int i = 0; i < num; i++) 
+        taskList[i].tat = taskList[i].bt + taskList[i].wt; 
+
+        for(int i = 0; i < num; i++)
+        {
+            totalTAT += taskList[i].tat;
+            totalWT += taskList[i].wt;
         }
 
         cout << "Avg. Waiting time : " << (double)totalWT / (double)num << endl;
         cout << "Avg. Turn Around Time : " << (double)totalTAT / (double)num << endl;
+        display();
     }
 
     void roundRobin()

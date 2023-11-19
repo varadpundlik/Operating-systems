@@ -33,7 +33,7 @@ public class Macro{
     Vector<ALA> ala=new Vector<ALA>();
 
     public static void pass1() throws Exception{
-        File input=new File("/home/student/Desktop/31467_LP1/Macro/input.txt");
+        File input=new File("input.txt");
         Scanner sc=new Scanner(input);
 
         while (sc.hasNextLine())
