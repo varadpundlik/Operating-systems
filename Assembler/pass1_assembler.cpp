@@ -160,7 +160,7 @@ int main()
                         s.pop_back();
                         fout << "(DL,01) (c," << s << ") "<<endl;
                         litTab[i].second = lc++;
-                        pc=i;
+                        pc=i+1;
                     }
                 }
                 
@@ -215,16 +215,16 @@ int main()
         }
         fout << endl;
     }
-    for (auto &literal : litTab)
+    poolTab.push_back(pc+1);
+    for (int i=pc;i<litTab.size();i++)
     {   
         //write code to add in pooltable
-        poolTab.push_back(pc+1);
-        if (literal.second == 0)
+        if (litTab[i].second == 0)
         {
-            string s=literal.first.substr(2);
+            string s=litTab[i].first.substr(2);
             s.pop_back();
             fout << "(DL,01) (c," << s << ") ";
-            literal.second = lc++;
+            litTab[i].second = lc++;
         }
 
     }
