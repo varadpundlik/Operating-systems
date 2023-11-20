@@ -2,7 +2,7 @@
 #include <deque>
 #include <algorithm>
 #include <iostream>
-using namespace KOstd;
+using namespace std;
 
 class PageReplacement {
 

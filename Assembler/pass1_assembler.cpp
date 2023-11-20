@@ -1,5 +1,4 @@
 #include <bits/stdc++.h>
-#include <string_view>
 using namespace std;
 
 void displaySymTab(vector<pair<string, int>> &s)
@@ -19,6 +18,16 @@ void displayLitTab(vector<pair<string, int>> &s)
     for (auto i : s)
     {
         flit << i.first << " " << i.second << endl;
+    }
+}
+
+void displayPoolTab(vector<int> &s)
+{
+    ofstream fpool;
+    fpool.open("pool_table.txt", ios::out);
+    for (auto i : s)
+    {
+        fpool << i << endl;
     }
 }
 
@@ -70,6 +79,7 @@ int main()
 
     vector<pair<string, int>> symTab;
     vector<pair<string, int>> litTab;
+    vector<int> poolTab;
 
     ifstream fin;
     fin.open("input.txt", ios::in);
@@ -78,6 +88,7 @@ int main()
     fout.open("intermediate_code.txt", ios::out);
 
     int lc = 0;
+    int pc=0;
 
     while (!fin.eof())
     {
@@ -99,9 +110,11 @@ int main()
         decodedInstruction.push_back(word);
         for (int i = 0; i < decodedInstruction.size(); i++)
         {
-            if (decodedInstruction[i] == "START")
+            if (decodedInstruction[i] == "START"){
                 lc = stoi(decodedInstruction[i + 1]) - 1;
-
+                cout<<lc<<endl;
+                fout << "(AD,01) ";
+            }
             else if (decodedInstruction[i] == "DC")
             {
                 fout << "(DL,02) (c," << decodedInstruction[i + 1] << ") ";
@@ -110,25 +123,47 @@ int main()
             }
             else if (decodedInstruction[i] == "EQU")
             {
+                fout << "(AD,04) ";
                 int pos = findElement(symTab, decodedInstruction[i - 1]);
                 if (pos != -1)
                 {
-                    symTab[pos].second = stoi(decodedInstruction[i + 1]);
+                    symTab[pos].second = symTab[findElement(symTab,decodedInstruction[i + 1])].second;
                 }
                 i++;
+                fout<<"(c,"<<symTab[pos].second<<") ";
+            }
+            else if (decodedInstruction[i]=="ORIGIN"){
+                //update origin handling code for statement like ORIGIN A+5
+
+                int pos=findElement(symTab,decodedInstruction[i+1]);
+                if(pos!=-1){
+                    lc=symTab[pos].second+stoi(decodedInstruction[i+2]);
+                }
+                else{
+                    lc=stoi(decodedInstruction[i+1]);
+                }
+                i++;
+                fout << "(AD,03) (c," << lc << ") ";
+                i+=2;
             }
             else if (decodedInstruction[i] == "LTORG")
             {
-                for (auto &literal : litTab)
+                fout << "(AD,05) "<<endl;
+
+                poolTab.push_back(pc+1);
+
+                for (int i=pc;i<litTab.size();i++)
                 {
-                    if (literal.second == 0)
+                    if (litTab[i].second == 0)
                     {
-                        string s=literal.first.substr(2);
+                        string s=litTab[i].first.substr(2);
                         s.pop_back();
-                        fout << "(DL,01) (c," << s << ") ";
-                        literal.second = lc++;
+                        fout << "(DL,01) (c," << s << ") "<<endl;
+                        litTab[i].second = lc++;
+                        pc=i;
                     }
                 }
+                
             }
             else if (memo.find(decodedInstruction[i]) != memo.end())
                 fout << "(" << memo[decodedInstruction[i]].first << "," << memo[decodedInstruction[i]].second << ") ";
@@ -139,9 +174,10 @@ int main()
             else if (concode.find(decodedInstruction[i]) != concode.end())
                 fout << "(" << concode[decodedInstruction[i]] << ") ";
 
-            else if (decodedInstruction[i][0] == '=')
+            else if (decodedInstruction[i][0] == '='){
                 litTab.push_back({decodedInstruction[i], 0});
-
+                fout << "(L," << litTab.size() - 1 << ") ";
+            }
             else if (decodedInstruction[i][0] >= '0' && decodedInstruction[i][0] <= '9')
                 fout << "(c," << decodedInstruction[i] << ") ";
 
@@ -180,7 +216,9 @@ int main()
         fout << endl;
     }
     for (auto &literal : litTab)
-    {
+    {   
+        //write code to add in pooltable
+        poolTab.push_back(pc+1);
         if (literal.second == 0)
         {
             string s=literal.first.substr(2);
@@ -188,8 +226,10 @@ int main()
             fout << "(DL,01) (c," << s << ") ";
             literal.second = lc++;
         }
+
     }
     displaySymTab(symTab);
     displayLitTab(litTab);
-    cout << "Pass 1 completed... Check generated files" << endl;
+    displayPoolTab(poolTab);
+    std::cout << "Pass 1 completed... Check generated files" << endl;
 }
